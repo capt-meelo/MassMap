@@ -28,7 +28,7 @@ echo -e "${GREEN}
 checkArgs(){
     if [[ $# -eq 0 ]]; then
         echo -e "\t${RED}[!] ERROR:${RESET} Invalid argument!\n"
-        echo -e "\t${GREEN}[+] USAGE:${RESET}$0 <list-of-IP/CIDR>\n"
+        echo -e "\t${GREEN}[+] USAGE:${RESET}$0 <File contains list-of-IP/CIDR>\n"
         exit 1
     elif [ ! -s $1 ]; then
         echo -e "\t${RED}[!] ERROR:${RESET} File is empty and/or does not exists!\n"
