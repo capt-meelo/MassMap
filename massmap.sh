@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.0"
+VERSION="2.0"
 
 TARGET="$1"
 
@@ -28,90 +28,33 @@ echo -e "${GREEN}
 checkArgs(){
     if [[ $# -eq 0 ]]; then
         echo -e "\t${RED}[!] ERROR:${RESET} Invalid argument!\n"
-        echo -e "\t${GREEN}[+] USAGE:${RESET}$0 <list-of-IP/CIDR>\n"
+        echo -e "\t${GREEN}[+] USAGE:${RESET}$0 <file-containing-list-of-IP/CIDR>\n"
         exit 1
     elif [ ! -s $1 ]; then
         echo -e "\t${RED}[!] ERROR:${RESET} File is empty and/or does not exists!\n"
-        echo -e "\t${GREEN}[+] USAGE:${RESET}$0 <list-of-IP/CIDR>\n"
+        echo -e "\t${GREEN}[+] USAGE:${RESET}$0 <file-containing-list-of-IP/CIDR>\n"
         exit 1
     fi
 }
 
-
-setupTools(){
-    echo -e "${GREEN}[+] Setting things up.${RESET}"
-    sudo apt update -y
-    sudo apt upgrade -y
-    sudo apt autoremove -y
-    sudo apt clean
-    sudo apt install -y gcc g++ make libpcap-dev xsltproc
-    
-    echo -e "${GREEN}[+] Creating results directory.${RESET}"
-    mkdir -p $RESULTS_PATH
-}
-
-
-installTools(){
-    LATEST_MASSCAN="1.0.6"
-    if [ ! -x "$(command -v masscan)" ]; then
-        echo -e "${GREEN}[+] Installing Masscan.${RESET}"
-        git clone https://github.com/robertdavidgraham/masscan
-        cd masscan
-        make -j
-        sudo make -j install
-        cd $WORKING_DIR
-        rm -rf masscan
-    else
-        if [ "$LATEST_MASSCAN" == "$(masscan -V | grep "Masscan version" | cut -d " " -f 3)" ]; then
-            echo -e "${BLUE}[-] Latest version of Masscan already installed. Skipping...${RESET}"
-        else
-            echo -e "${GREEN}[+] Upgrading Masscan to the latest version.${RESET}"
-            git clone https://github.com/robertdavidgraham/masscan
-            cd masscan
-            make -j
-            sudo make -j install
-            cd $WORKING_DIR
-            rm -rf masscan*
-        fi
-    fi
-
-    LATEST_NMAP="$(wget -qO- https://nmap.org/dist/ | grep -oP 'nmap-([0-9\.]+)\.tar\.bz2'| tail -n 1 | grep -oP 'nmap-[0-9\.]+' | grep -oP '[0-9\.]+' | head -c -2)"
-    if [ ! -x "$(command -v nmap)" ]; then
-        echo -e "${GREEN}[+] Installing Nmap.${RESET}"
-        wget https://nmap.org/dist/nmap-$LATEST_NMAP.tar.bz2
-        bzip2 -cd nmap-$LATEST_NMAP.tar.bz2 | tar xvf -
-        cd nmap-$LATEST_NMAP
-        ./configure
-        make -j
-        sudo make -j install
-        cd $WORKING_DIR
-        rm -rf nmap-$LATEST_NMAP*
-    else 
-        if [ "$LATEST_NMAP" == "$(nmap -V | grep "Nmap version" | cut -d " " -f 3)" ]; then
-            echo -e "${BLUE}[-] Latest version of Nmap already installed. Skipping...${RESET}"
-        else
-            echo -e "${GREEN}[+] Upgrading Nmap to the latest version.${RESET}"
-            wget https://nmap.org/dist/nmap-$LATEST_NMAP.tar.bz2
-            bzip2 -cd nmap-$LATEST_NMAP.tar.bz2 | tar xvf -
-            cd nmap-$LATEST_NMAP
-            ./configure
-            make -j
-            sudo make -j install
-            cd $WORKING_DIR
-            rm -rf nmap-$LATEST_NMAP*
-        fi 
-    fi
-}
-
-
 portScan(){
+    echo -e "${GREEN}[+] Checking if results directory already exists.${RESET}"
+    if [ -d $RESULTS_PATH ]
+    then
+        echo -e "${BLUE}[-] Directory already exists. Skipping...${RESET}"
+    else
+        echo -e "${GREEN}[+] Creating results directory.${RESET}"
+        mkdir -p $RESULTS_PATH
+    fi
+
     echo -e "${GREEN}[+] Running Masscan.${RESET}"
     sudo masscan -p 1-65535 --rate 100000 --wait 0 --open -iL $TARGET -oX $RESULTS_PATH/masscan.xml
-    sudo rm $WORKING_DIR/paused.conf
-    xsltproc -o $RESULTS_PATH/masscan.html $WORKING_DIR/bootstrap-masscan.xsl $RESULTS_PATH/masscan.xml
+    if [ -f "$WORKING_DIR/paused.conf" ] ; then
+        sudo rm "$WORKING_DIR/paused.conf"
+    fi
     open_ports=$(cat $RESULTS_PATH/masscan.xml | grep portid | cut -d "\"" -f 10 | sort -n | uniq | paste -sd,)
     cat $RESULTS_PATH/masscan.xml | grep portid | cut -d "\"" -f 4 | sort -V | uniq > $WORKING_DIR/nmap_targets.tmp
-    echo -e "${RED}[*] Masscan Done! View the HTML report at $RESULTS_PATH${RESET}"
+    echo -e "${RED}[*] Masscan Done!"
 
     echo -e "${GREEN}[+] Running Nmap.${RESET}"
     sudo nmap -sVC -p $open_ports --open -v -Pn -n -T4 -iL $WORKING_DIR/nmap_targets.tmp -oX $RESULTS_PATH/nmap.xml
@@ -124,6 +67,4 @@ portScan(){
 
 displayLogo
 checkArgs $TARGET
-setupTools
-installTools
 portScan

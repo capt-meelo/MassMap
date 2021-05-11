@@ -2,6 +2,7 @@
 <!--
 Nmap Bootstrap XSL
 Creative Commons BY-SA
+This software must not be used by military or secret service organisations.
 Andreas Hontzia (@honze_net)
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -35,6 +36,17 @@ Andreas Hontzia (@honze_net)
             width: 100%;
             height: 180px;
             background-color: #f5f5f5;
+          }
+          .clickable {
+            cursor: pointer;
+          }
+          .panel-heading > h3:before {
+            font-family: 'Glyphicons Halflings';
+            content: "\e114"; /* glyphicon-chevron-down */
+            padding-right: 1em;
+          }
+          .panel-heading.collapsed > h3:before {
+            content: "\e080"; /* glyphicon-chevron-right */
           }
         </style>
         <title>Scan Report Nmap <xsl:value-of select="/nmaprun/@version"/></title>
@@ -127,14 +139,19 @@ Andreas Hontzia (@honze_net)
             $(document).ready(function() {
               $('#table-overview').DataTable();
             });
+            $('#table-overview').DataTable( {
+              "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ]
+            });
           </script>
           <h2 id="onlinehosts" class="target">Online Hosts</h2>
           <xsl:for-each select="/nmaprun/host[status/@state='up']">
             <div class="panel panel-default">
-              <div class="panel-heading">
+              <div class="panel-heading clickable" data-toggle="collapse">
+                  <xsl:attribute name="data-target">#<xsl:value-of select="translate(address/@addr, '.', '-')"/></xsl:attribute>
                 <h3 class="panel-title"><xsl:value-of select="address/@addr"/><xsl:if test="count(hostnames/hostname) > 0"> - <xsl:value-of select="hostnames/hostname/@name"/></xsl:if></h3>
               </div>
-              <div class="panel-body">
+              <div class="panel-body collapse in">
+                <xsl:attribute name="id"><xsl:value-of select="translate(address/@addr, '.', '-')"/></xsl:attribute>
                 <xsl:if test="count(hostnames/hostname) > 0">
                   <h4>Hostnames</h4>
                   <ul>
@@ -225,6 +242,19 @@ Andreas Hontzia (@honze_net)
                   <h5><xsl:value-of select="@id"/></h5>
                   <pre style="white-space:pre-wrap; word-wrap:break-word;"><xsl:value-of select="@output"/></pre>
                 </xsl:for-each>
+                <xsl:if test="count(os/osmatch) > 0">
+                  <h4>OS Detection</h4>
+                  <xsl:for-each select="os/osmatch">
+                    <h5>OS details: <xsl:value-of select="@name"/> (<xsl:value-of select="@accuracy"/>%)</h5>
+                    <xsl:for-each select="osclass">
+                      Device type: <xsl:value-of select="@type"/><br/>
+                      Running: <xsl:value-of select="@vendor"/><xsl:text> </xsl:text><xsl:value-of select="@osfamily"/><xsl:text> </xsl:text><xsl:value-of select="@osgen"/> (<xsl:value-of select="@accuracy"/>%)<br/>
+                      OS CPE: <a><xsl:attribute name="href">https://nvd.nist.gov/vuln/search/results?form_type=Advanced&amp;cves=on&amp;cpe_version=<xsl:value-of select="cpe"/></xsl:attribute><xsl:value-of select="cpe"/></a>
+                      <br/>
+                    </xsl:for-each>
+                    <br/>
+                  </xsl:for-each>
+                </xsl:if>
               </div>
             </div>
           </xsl:for-each>
@@ -264,6 +294,9 @@ Andreas Hontzia (@honze_net)
           <script>
             $(document).ready(function() {
               $('#table-services').DataTable();
+            });
+            $('#table-services').DataTable( {
+              "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ]
             });
           </script>
         </div>
