@@ -31,7 +31,7 @@ chmod +x massmap.sh
 ```
 
 ## Notes
-- It's suggested to run this tool in a VPS, such as [DigitalOcean](https://www.digitalocean.com/?refcode=f7f86614e1b3), for better speed & accuracy.
+- It's suggested to run this tool in a VPS, such as [DigitalOcean](https://www.digitalocean.com/?refcode=673a84e9aa62), for better speed & accuracy.
 - Running this tool takes time, thus it's recommended to run it under a **screen** or **tmux** session.
 - By default, **Masscan** runs using the option `--rate 100000` for more accurate results (based on this [research](https://captmeelo.com/pentest/2019/07/29/port-scanning.html)). If you want **Masscan** to run faster, increase the `--rate` option.
 
