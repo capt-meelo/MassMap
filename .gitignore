@@ -1,0 +1,17 @@
+# Generated scans, reports, logs, and resume state
+/results/
+/paused.conf
+
+# Local target and exclusion lists
+/inputs/
+/targets.txt
+/exclude.txt
+
+# Python caches and optional virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# macOS metadata
+.DS_Store
